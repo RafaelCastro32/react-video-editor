@@ -36,8 +36,8 @@ export default function Caption({
   );
   const { from, durationInFrames } = calculateFrames(item.display, fps);
   const currentFrame = (frame || 0) - (item.display.from * fps) / 1000;
-  const [firstWord] = details.words;
-  const offsetFrom = display.from - firstWord.start;
+  const [firstWord] = details.words || [];
+  const offsetFrom = firstWord?.start ? display.from - firstWord.start : 0;
 
   // Calculate scale factor and update details
   const updatedDetails = calculateUpdatedDetails(details);

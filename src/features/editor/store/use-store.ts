@@ -45,6 +45,7 @@ interface ITimelineStore {
   };
   viewTimeline: boolean;
   setViewTimeline: (viewTimeline: boolean) => void;
+  setSize: (size: ISize) => void;
 }
 
 const useStore = create<ITimelineStore>((set) => ({
@@ -62,6 +63,7 @@ const useStore = create<ITimelineStore>((set) => ({
   },
   viewTimeline: true,
   setViewTimeline: (viewTimeline) => set({ viewTimeline }),
+  setSize: (size: ISize) => set({ size }),
 
   timeline: null,
   duration: 1000,

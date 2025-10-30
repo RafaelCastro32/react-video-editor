@@ -76,12 +76,23 @@ export const Captions = () => {
       return;
     }
 
+    // Show loading toast
+    const loadingToast = toast.loading('Processing SRT file...');
+
     try {
       const text = await file.text();
       const captions = parseSrtFile(text);
       
       if (captions.length === 0) {
+        toast.dismiss(loadingToast);
         toast.error('No captions found in SRT file');
+        return;
+      }
+
+      // Limit number of captions to prevent freezing
+      if (captions.length > 500) {
+        toast.dismiss(loadingToast);
+        toast.error(`Too many captions (${captions.length}). Maximum is 500.`);
         return;
       }
 
@@ -93,46 +104,66 @@ export const Captions = () => {
 
       await loadFonts([{ name: fontInfo.fontFamily, url: fontInfo.fontUrl }]);
 
-      const captionItems = captions.map((caption) => ({
-        id: generateId(),
-        name: "caption",
-        type: "caption",
-        display: {
-          from: caption.startMs,
-          to: caption.endMs
-        },
-        details: {
-          text: caption.text,
-          fontFamily: fontInfo.fontFamily,
-          fontSize: fontInfo.fontSize,
-          fontUrl: fontInfo.fontUrl,
-          fill: "#FFFFFF",
-          stroke: "#000000",
-          strokeWidth: 0,
-          textAlign: "center",
-          letterSpacing: 0,
-          lineHeight: 1.2,
-          backgroundColor: "transparent",
-          backgroundPadding: 0,
-          borderRadius: 0
-        },
-        metadata: {}
-      }));
+      // Create caption items with words array for proper rendering
+      const captionItems = captions.map((caption) => {
+        const words = caption.text.split(/\s+/).map((word, index) => ({
+          text: word,
+          start: caption.startMs + (index * 100), // Distribute words across duration
+          end: caption.startMs + ((index + 1) * 100)
+        }));
 
-      dispatch(ADD_ITEMS, {
-        payload: {
-          trackItems: captionItems,
-          tracks: [
-            {
-              id: generateId(),
-              items: captionItems.map((item) => item.id),
-              type: "caption",
-              name: "SRT Captions"
-            }
-          ]
-        }
+        return {
+          id: generateId(),
+          name: "caption",
+          type: "caption",
+          display: {
+            from: caption.startMs,
+            to: caption.endMs
+          },
+          details: {
+            text: caption.text,
+            words: words,
+            fontFamily: fontInfo.fontFamily,
+            fontSize: fontInfo.fontSize,
+            fontUrl: fontInfo.fontUrl,
+            fill: "#FFFFFF",
+            stroke: "#000000",
+            strokeWidth: 0,
+            textAlign: "center",
+            letterSpacing: 0,
+            lineHeight: 1.2,
+            backgroundColor: "transparent",
+            backgroundPadding: 0,
+            borderRadius: 0
+          },
+          metadata: {}
+        };
       });
 
+      // Add captions in batches to prevent freezing
+      const batchSize = 50;
+      for (let i = 0; i < captionItems.length; i += batchSize) {
+        const batch = captionItems.slice(i, i + batchSize);
+        
+        dispatch(ADD_ITEMS, {
+          payload: {
+            trackItems: batch,
+            tracks: i === 0 ? [
+              {
+                id: generateId(),
+                items: captionItems.map((item) => item.id),
+                type: "caption",
+                name: "SRT Captions"
+              }
+            ] : []
+          }
+        });
+
+        // Small delay between batches to prevent UI freeze
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+
+      toast.dismiss(loadingToast);
       toast.success(`Added ${captions.length} captions from SRT file`);
       
       // Reset file input
@@ -141,6 +172,7 @@ export const Captions = () => {
       }
     } catch (error) {
       console.error('Error processing SRT file:', error);
+      toast.dismiss(loadingToast);
       toast.error('Failed to process SRT file');
     }
   };

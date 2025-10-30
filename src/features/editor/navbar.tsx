@@ -12,9 +12,13 @@ import {
   ChevronDown,
   Download,
   ProportionsIcon,
-  ShareIcon
+  ShareIcon,
+  Settings
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import useStore from "./store/use-store";
+import { toast } from "sonner";
 
 import type StateManager from "@designcombo/state";
 import { generateId } from "@designcombo/timeline";
@@ -142,12 +146,139 @@ export default function Navbar({
             <span className="hidden md:block">Share</span>
           </Button>
 
+          <VideoSizePopover />
           <DownloadPopover stateManager={stateManager} />
         </div>
       </div>
     </div>
   );
 }
+
+const VideoSizePopover = () => {
+  const isMediumScreen = useIsMediumScreen();
+  const { size, setSize } = useStore();
+  const [open, setOpen] = useState(false);
+  const [width, setWidth] = useState(size.width.toString());
+  const [height, setHeight] = useState(size.height.toString());
+
+  // Preset sizes
+  const presets = [
+    { name: "Portrait (9:16)", width: 1080, height: 1920 },
+    { name: "Landscape (16:9)", width: 1920, height: 1080 },
+    { name: "Square (1:1)", width: 1080, height: 1080 },
+    { name: "Portrait (4:5)", width: 1080, height: 1350 },
+    { name: "Landscape (4:3)", width: 1280, height: 960 },
+    { name: "Ultrawide (21:9)", width: 2560, height: 1080 },
+    { name: "Full HD (16:9)", width: 1920, height: 1080 },
+    { name: "4K (16:9)", width: 3840, height: 2160 }
+  ];
+
+  const handleApply = () => {
+    const w = parseInt(width);
+    const h = parseInt(height);
+
+    if (isNaN(w) || isNaN(h) || w <= 0 || h <= 0) {
+      toast.error("Please enter valid dimensions");
+      return;
+    }
+
+    if (w > 4096 || h > 4096) {
+      toast.error("Maximum dimension is 4096px");
+      return;
+    }
+
+    setSize({ width: w, height: h });
+    toast.success(`Video size changed to ${w}x${h}`);
+    setOpen(false);
+  };
+
+  const handlePreset = (preset: { width: number; height: number }) => {
+    setWidth(preset.width.toString());
+    setHeight(preset.height.toString());
+    setSize({ width: preset.width, height: preset.height });
+    toast.success(`Video size changed to ${preset.width}x${preset.height}`);
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          className="flex h-7 gap-1 border border-border"
+          variant="outline"
+          size={isMediumScreen ? "sm" : "icon"}
+        >
+          <Settings width={18} />
+          <span className="hidden md:block">Size</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="bg-sidebar z-[250] flex w-80 flex-col gap-4"
+      >
+        <div>
+          <Label className="text-sm font-medium">Video Dimensions</Label>
+          <p className="text-xs text-muted-foreground mt-1">
+            Current: {size.width} × {size.height}
+          </p>
+        </div>
+
+        {/* Presets */}
+        <div className="flex flex-col gap-2">
+          <Label className="text-xs text-muted-foreground">Presets</Label>
+          <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+            {presets.map((preset, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                className="justify-start text-xs"
+                onClick={() => handlePreset(preset)}
+              >
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">{preset.name}</span>
+                  <span className="text-muted-foreground">
+                    {preset.width}×{preset.height}
+                  </span>
+                </div>
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Size */}
+        <div className="flex flex-col gap-2">
+          <Label className="text-xs text-muted-foreground">Custom Size</Label>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Label className="text-xs">Width (px)</Label>
+              <Input
+                type="number"
+                value={width}
+                onChange={(e) => setWidth(e.target.value)}
+                placeholder="1080"
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="flex-1">
+              <Label className="text-xs">Height (px)</Label>
+              <Input
+                type="number"
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+                placeholder="1920"
+                className="h-8 text-sm"
+              />
+            </div>
+          </div>
+          <Button onClick={handleApply} size="sm" className="w-full">
+            Apply Custom Size
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const DownloadPopover = ({ stateManager }: { stateManager: StateManager }) => {
   const isMediumScreen = useIsMediumScreen();

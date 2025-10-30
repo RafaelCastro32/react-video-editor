@@ -47,7 +47,7 @@ export const Uploads = () => {
       },
       options: {
         resourceId: "main",
-        scaleMode: "fit"
+        scaleMode: "cover" // Changed from "fit" to "cover" to fill entire canvas
       }
     });
   };
