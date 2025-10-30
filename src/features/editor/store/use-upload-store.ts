@@ -186,7 +186,15 @@ const useUploadStore = create<IUploadStore>()(
     }),
     {
       name: "upload-store",
-      partialize: (state) => ({ uploads: state.uploads })
+      partialize: (state) => ({
+        // Don't persist uploads with blob URLs as they become invalid after page reload
+        uploads: state.uploads.filter((upload) => {
+          // Only persist uploads that don't have blob URLs
+          const isBlobUrl = upload.url?.startsWith('blob:') || 
+                           upload.filePath?.startsWith('blob:');
+          return !isBlobUrl;
+        })
+      })
     }
   )
 );

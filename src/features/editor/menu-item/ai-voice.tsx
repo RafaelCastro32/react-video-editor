@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, ChevronDown, Pause, Play } from "lucide-react";
+import { Loader2, ChevronDown, Pause, Play, Volume2, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,17 +21,150 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Voice, VoiceFilters } from "../interfaces/editor";
+import useUploadStore from "../store/use-upload-store";
+
+// Kokoro voices interface
+interface KokoroVoice {
+  id: string;
+  name: string;
+  lang: string;
+  gender: string;
+}
+
+// Component to display generated audios
+const GeneratedAudios = () => {
+  const { uploads, setUploads } = useUploadStore();
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [audioElements, setAudioElements] = useState<Record<string, HTMLAudioElement>>({});
+
+  // Filter only Kokoro-generated audios
+  const kokoroAudios = uploads.filter(
+    (upload) => upload.type === 'audio' && upload.id?.startsWith('kokoro-audio-')
+  );
+
+  const handlePlayPause = (audioId: string, audioUrl: string) => {
+    if (playingId === audioId) {
+      // Pause current audio
+      audioElements[audioId]?.pause();
+      setPlayingId(null);
+    } else {
+      // Stop any currently playing audio
+      if (playingId && audioElements[playingId]) {
+        audioElements[playingId].pause();
+        audioElements[playingId].currentTime = 0;
+      }
+
+      // Play new audio
+      if (!audioElements[audioId]) {
+        const audio = new Audio(audioUrl);
+        audio.addEventListener('ended', () => setPlayingId(null));
+        setAudioElements(prev => ({ ...prev, [audioId]: audio }));
+        audio.play();
+      } else {
+        audioElements[audioId].play();
+      }
+      setPlayingId(audioId);
+    }
+  };
+
+  const handleRemove = (audioId: string) => {
+    // Stop audio if playing
+    if (playingId === audioId) {
+      audioElements[audioId]?.pause();
+      setPlayingId(null);
+    }
+
+    // Remove from store
+    setUploads(uploads.filter(upload => upload.id !== audioId));
+    
+    // Clean up audio element
+    if (audioElements[audioId]) {
+      audioElements[audioId].pause();
+      audioElements[audioId].src = '';
+      const newElements = { ...audioElements };
+      delete newElements[audioId];
+      setAudioElements(newElements);
+    }
+
+    toast.success('Audio removed');
+  };
+
+  if (kokoroAudios.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Generated Audios
+          </span>
+        </div>
+      </div>
+
+      {/* Audio List */}
+      <ScrollArea className="max-h-[300px]">
+        <div className="space-y-2">
+          {kokoroAudios.map((audio) => (
+            <div
+              key={audio.id}
+              className="group relative flex items-center gap-3 rounded-lg border border-border bg-card p-3 hover:bg-accent/50 transition-colors"
+            >
+              {/* Play/Pause Button */}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 flex-shrink-0"
+                onClick={() => handlePlayPause(audio.id, audio.url)}
+              >
+                {playingId === audio.id ? (
+                  <Pause className="h-4 w-4" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
+              </Button>
+
+              {/* Audio Info */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{audio.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {audio.duration ? `${(audio.duration / 1000).toFixed(1)}s` : 'Unknown duration'}
+                </p>
+              </div>
+
+              {/* Remove Button (visible on hover) */}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => handleRemove(audio.id)}
+              >
+                <X className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    </>
+  );
+};
 
 export const AiVoice = () => {
   const [text, setText] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [voices, setVoices] = useState<Voice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<Voice | null>(null);
+  const [voices, setVoices] = useState<KokoroVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<KokoroVoice | null>(null);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<VoiceFilters>({
     language: "all",
     gender: "all"
   });
+  const [generatedAudio, setGeneratedAudio] = useState<string | null>(null);
   const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(
     null
   );
@@ -107,30 +240,11 @@ export const AiVoice = () => {
     da: "Danish"
   };
 
-  // Handle play/pause for a specific voice
-  const handlePlayPause = (voiceId: string, previewUrl: string) => {
-    if (currentlyPlayingId === voiceId) {
-      if (audioElement) {
-        audioElement.pause();
-        setCurrentlyPlayingId(null);
-        setAudioElement(null);
-      }
-      return;
-    }
-
-    if (audioElement) {
-      audioElement.pause();
-    }
-
-    const newAudio = new Audio(previewUrl);
-    newAudio.addEventListener("ended", () => {
-      setCurrentlyPlayingId(null);
-      setAudioElement(null);
-    });
-
-    newAudio.play();
-    setCurrentlyPlayingId(voiceId);
-    setAudioElement(newAudio);
+  // Handle play/pause for a specific voice (Kokoro doesn't have previews)
+  const handlePlayPause = (voiceId: string) => {
+    // Kokoro voices don't have preview URLs
+    // You could generate a sample sentence here if needed
+    toast.info("Preview not available for Kokoro voices. Generate audio to hear the voice.");
   };
 
   // Cleanup audio on component unmount
@@ -142,30 +256,42 @@ export const AiVoice = () => {
     };
   }, [audioElement]);
 
-  // Fetch voices from API
+  // Fetch Kokoro voices from local API
   const fetchVoices = async (queryParams?: any) => {
     setLoading(true);
     try {
-      const response = await fetch("/api/voices", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          limit: 20,
-          page: 1,
-          query: queryParams || {}
-        })
-      });
+      const response = await fetch("/api/kokoro");
 
       if (response.ok) {
         const data = await response.json();
-        setVoices(data.voices || []);
+        let filteredVoices = data.voices || [];
+        
+        // Apply filters
+        if (queryParams?.language && queryParams.language !== "all") {
+          filteredVoices = filteredVoices.filter((v: KokoroVoice) => 
+            v.lang.toLowerCase().includes(queryParams.language.toLowerCase())
+          );
+        }
+        if (queryParams?.gender && queryParams.gender !== "all") {
+          filteredVoices = filteredVoices.filter((v: KokoroVoice) => 
+            v.gender === queryParams.gender
+          );
+        }
+        
+        setVoices(filteredVoices);
+        
+        // Set default voice (Portuguese female)
+        if (filteredVoices.length > 0 && !selectedVoice) {
+          const defaultVoice = filteredVoices.find((v: KokoroVoice) => v.id === "pf_dora") || filteredVoices[0];
+          setSelectedVoice(defaultVoice);
+        }
       } else {
-        console.error("Failed to fetch voices");
+        console.error("Failed to fetch Kokoro voices");
+        toast.error("Failed to load Kokoro voices. Make sure Python environment is set up.");
       }
     } catch (error) {
-      console.error("Error fetching voices:", error);
+      console.error("Error fetching Kokoro voices:", error);
+      toast.error("Error loading voices. Check console for details.");
     } finally {
       setLoading(false);
     }
@@ -190,18 +316,18 @@ export const AiVoice = () => {
     if (!text.trim() || !selectedVoice) return;
 
     setIsGenerating(true);
+    setGeneratedAudio(null);
 
     try {
-      // Call the TTS API
-      const response = await fetch("/api/generate-voice", {
+      // Call Kokoro local TTS API
+      const response = await fetch("/api/kokoro", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
           text: text.trim(),
-          voiceId: selectedVoice.id,
-          folder: "ai-voice-generations" // Optional folder for organization
+          voice: selectedVoice.id
         })
       });
 
@@ -212,26 +338,80 @@ export const AiVoice = () => {
 
       const data = await response.json();
 
-      // Handle successful generation
-      // You can add logic here to handle the generated audio
-      // For example, add it to the timeline, play it, etc.
-      if (data.agent?.url) {
-        console.log("Generated audio URL:", data.agent.url);
-        console.log("Audio duration:", data.agent.duration);
-
-        toast.success("Voice generated successfully!");
-
-        // TODO: Add the generated audio to the editor timeline
-        // This would typically involve calling a store action or context function
+      if (data.success && data.audio) {
+        setGeneratedAudio(data.audio);
+        
+        // Convert base64 to blob and add to editor
+        try {
+          // Extract base64 data
+          const base64Data = data.audio.split(',')[1];
+          const binaryString = atob(base64Data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const blob = new Blob([bytes], { type: 'audio/wav' });
+          
+          // Create object URL
+          const audioUrl = URL.createObjectURL(blob);
+          
+          // Create audio element to get duration
+          const audioElement = new Audio(audioUrl);
+          
+          audioElement.addEventListener('loadedmetadata', () => {
+            const durationMs = Math.floor(audioElement.duration * 1000);
+            
+            // Create unique ID for the audio
+            const audioId = `kokoro-audio-${Date.now()}`;
+            
+            // Add to upload store using setUploads
+            const { setUploads } = useUploadStore.getState();
+            setUploads((prev) => [
+              ...prev,
+              {
+                id: audioId,
+                name: `Kokoro Voice - ${selectedVoice.name}.wav`,
+                url: audioUrl,
+                filePath: audioUrl,
+                type: 'audio',
+                duration: durationMs,
+                width: 0,
+                height: 0,
+              }
+            ]);
+            
+            toast.success("Voice generated and added to uploads!");
+            
+            // Play the audio
+            audioElement.play();
+          });
+          
+          audioElement.addEventListener('error', (e) => {
+            console.error('Error loading audio:', e);
+            toast.error('Generated audio but failed to load metadata');
+            
+            // Still play it even if metadata fails
+            const audio = new Audio(data.audio);
+            audio.play();
+          });
+          
+        } catch (error) {
+          console.error('Error processing audio:', error);
+          toast.warning('Voice generated but failed to add to editor');
+          
+          // Fallback: just play the audio
+          const audio = new Audio(data.audio);
+          audio.play();
+        }
       } else {
-        toast.error("Voice generation completed but no audio URL received");
+        toast.error("Voice generation completed but no audio received");
       }
     } catch (error) {
-      console.error("Error generating voice:", error);
+      console.error("Error generating voice with Kokoro:", error);
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to generate voice. Please try again."
+          : "Failed to generate voice. Make sure Kokoro Python environment is running."
       );
     } finally {
       setIsGenerating(false);
@@ -309,17 +489,10 @@ export const AiVoice = () => {
                             className="h-5 w-5 flex-shrink-0 p-0 hover:bg-transparent voice-preview-btn"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handlePlayPause(
-                                selectedVoice.id,
-                                selectedVoice.previewUrl
-                              );
+                              handlePlayPause(selectedVoice.id);
                             }}
                           >
-                            {currentlyPlayingId === selectedVoice.id ? (
-                              <Pause className="h-3 w-3" />
-                            ) : (
-                              <Play className="h-3 w-3" />
-                            )}
+                            <Play className="h-3 w-3" />
                           </Button>
                           <span className="truncate">{displayName}</span>
                         </div>
@@ -413,24 +586,12 @@ export const AiVoice = () => {
                             {/* Voice Info */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                {/* Play Button */}
-                                <Button
-                                  size="icon"
-                                  variant={
-                                    isRowSelected ? "secondary" : "ghost"
-                                  }
-                                  className={`flex-shrink-0 ${isRowSelected ? "bg-white/20 text-white" : "text-white/80"}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handlePlayPause(voice.id, voice.previewUrl);
-                                  }}
-                                >
-                                  {currentlyPlayingId === voice.id ? (
-                                    <Pause className="h-5 w-5" />
-                                  ) : (
-                                    <Play className="h-5 w-5" />
-                                  )}
-                                </Button>
+                                {/* Voice icon (no preview for Kokoro) */}
+                                <div className="flex-shrink-0 h-10 w-10 bg-zinc-700/60 rounded flex items-center justify-center">
+                                  <span className="text-sm font-semibold">
+                                    {voice.gender === 'female' ? '♀' : '♂'}
+                                  </span>
+                                </div>
                                 <div className="flex items-center gap-2">
                                   {(() => {
                                     const parts = voice.name.split(" - ");
@@ -460,32 +621,18 @@ export const AiVoice = () => {
                                   {voice.gender.charAt(0).toUpperCase() +
                                     voice.gender.slice(1)}
                                 </Badge>
-                                {voice.age && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-xs bg-zinc-700/60 border-none text-white/90 rounded-sm"
-                                  >
-                                    {voice.age.charAt(0).toUpperCase() +
-                                      voice.age.slice(1)}
-                                  </Badge>
-                                )}
-                                {voice.useCase && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-xs bg-zinc-700/60 border-none text-white/90 rounded-sm"
-                                  >
-                                    {voice.useCase}
-                                  </Badge>
-                                )}
-
-                                {voice.category && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-xs bg-zinc-700/60 border-none text-white/90 rounded-sm"
-                                  >
-                                    {voice.category}
-                                  </Badge>
-                                )}
+                                <Badge
+                                  variant="secondary"
+                                  className="text-xs bg-zinc-700/60 border-none text-white/90 rounded-sm"
+                                >
+                                  {voice.lang}
+                                </Badge>
+                                <Badge
+                                  variant="secondary"
+                                  className="text-xs bg-blue-600/60 border-none text-white/90 rounded-sm"
+                                >
+                                  Kokoro TTS
+                                </Badge>
                               </div>
                             </div>
                           </div>
@@ -521,6 +668,9 @@ export const AiVoice = () => {
             )}
           </Button>
         </div>
+
+        {/* Generated Audios Section */}
+        <GeneratedAudios />
       </div>
     </div>
   );

@@ -39,3 +39,29 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python / Kokoro TTS
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Kokoro models (large files)
+Kokoro-82M/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Audio files
+gravacoes/
+*.wav
+*.mp3

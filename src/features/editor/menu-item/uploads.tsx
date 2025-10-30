@@ -7,15 +7,17 @@ import {
   Image as ImageIcon,
   Video as VideoIcon,
   Loader2,
-  UploadIcon
+  UploadIcon,
+  X
 } from "lucide-react";
 import { generateId } from "@designcombo/timeline";
 import { Button } from "@/components/ui/button";
 import useUploadStore from "../store/use-upload-store";
 import ModalUpload from "@/components/modal-upload";
+import { toast } from "sonner";
 
 export const Uploads = () => {
-  const { setShowUploadModal, uploads, pendingUploads, activeUploads } =
+  const { setShowUploadModal, uploads, pendingUploads, activeUploads, setUploads } =
     useUploadStore();
 
   // Group completed uploads by type
@@ -83,6 +85,12 @@ export const Uploads = () => {
       },
       options: {}
     });
+  };
+
+  const handleRemoveUpload = (uploadId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the card click
+    setUploads(uploads.filter(upload => upload.id !== uploadId));
+    toast.success('Upload removed');
   };
 
   const UploadPrompt = () => (
@@ -155,10 +163,18 @@ export const Uploads = () => {
                     key={video.id || idx}
                   >
                     <Card
-                      className="w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer"
+                      className="group w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer"
                       onClick={() => handleAddVideo(video)}
                     >
                       <VideoIcon className="w-8 h-8 text-muted-foreground" />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-0 right-0 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => handleRemoveUpload(video.id, e)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
                     </Card>
                     <div className="text-xs text-muted-foreground truncate w-full text-center">
                       {video.file?.name || video.url || "Video"}
@@ -185,10 +201,18 @@ export const Uploads = () => {
                     key={image.id || idx}
                   >
                     <Card
-                      className="w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer"
+                      className="group w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer"
                       onClick={() => handleAddImage(image)}
                     >
                       <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-0 right-0 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => handleRemoveUpload(image.id, e)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
                     </Card>
                     <div className="text-xs text-muted-foreground truncate w-full text-center">
                       {image.file?.name || image.url || "Image"}
@@ -215,10 +239,18 @@ export const Uploads = () => {
                     key={audio.id || idx}
                   >
                     <Card
-                      className="w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer"
+                      className="group w-16 h-16 flex items-center justify-center overflow-hidden relative cursor-pointer"
                       onClick={() => handleAddAudio(audio)}
                     >
                       <Music className="w-8 h-8 text-muted-foreground" />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-0 right-0 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => handleRemoveUpload(audio.id, e)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
                     </Card>
                     <div className="text-xs text-muted-foreground truncate w-full text-center">
                       {audio.file?.name || audio.url || "Audio"}
