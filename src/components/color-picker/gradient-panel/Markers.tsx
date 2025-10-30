@@ -329,14 +329,14 @@ const Markers: FC<IPropsPanel> = ({
           .join(", ")}
       />
       <GradientStopMarkerContainer>
-        {stops.map((color: [string, number, number]) => {
+        {stops.map((color: [string, number, number], index: number) => {
           const position = color[1] * 100;
           const rgba = color[0];
           const isActive = !hideStop && activeColor.index === color[2];
           const isHide = hideStop && activeColor.index === color[2];
           return (
             <GradientMarker
-              key={rgba + position + Math.random() * 100}
+              key={`${rgba}-${position}-${index}`}
               style={{
                 left: `${Math.abs(Math.min(position, 100))}%`,
                 color: rgba,

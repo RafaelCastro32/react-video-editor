@@ -151,8 +151,9 @@ export default function Navbar({
 
 const DownloadPopover = ({ stateManager }: { stateManager: StateManager }) => {
   const isMediumScreen = useIsMediumScreen();
-  const { actions, exportType } = useDownloadState();
+  const { actions, exportType, exportMode } = useDownloadState();
   const [isExportTypeOpen, setIsExportTypeOpen] = useState(false);
+  const [isExportModeOpen, setIsExportModeOpen] = useState(false);
   const [open, setOpen] = useState(false);
 
   const handleExport = () => {
@@ -164,7 +165,13 @@ const DownloadPopover = ({ stateManager }: { stateManager: StateManager }) => {
     console.log({ data });
 
     actions.setState({ payload: data });
-    actions.startExport();
+
+    // Use local or cloud export based on mode
+    if (exportMode === "local") {
+      actions.startLocalExport();
+    } else {
+      actions.startExport();
+    }
   };
 
   return (
@@ -184,38 +191,75 @@ const DownloadPopover = ({ stateManager }: { stateManager: StateManager }) => {
       >
         <Label>Export settings</Label>
 
-        <Popover open={isExportTypeOpen} onOpenChange={setIsExportTypeOpen}>
-          <PopoverTrigger asChild>
-            <Button className="w-full justify-between" variant="outline">
-              <div>{exportType.toUpperCase()}</div>
-              <ChevronDown width={16} />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="bg-background z-[251] w-[--radix-popover-trigger-width] px-2 py-2">
-            <div
-              className="flex h-7 items-center rounded-sm px-3 text-sm hover:cursor-pointer hover:bg-zinc-800"
-              onClick={() => {
-                actions.setExportType("mp4");
-                setIsExportTypeOpen(false);
-              }}
-            >
-              MP4
-            </div>
-            <div
-              className="flex h-7 items-center rounded-sm px-3 text-sm hover:cursor-pointer hover:bg-zinc-800"
-              onClick={() => {
-                actions.setExportType("json");
-                setIsExportTypeOpen(false);
-              }}
-            >
-              JSON
-            </div>
-          </PopoverContent>
-        </Popover>
+        {/* Export Mode Selector */}
+        <div className="flex flex-col gap-2">
+          <Label className="text-xs text-muted-foreground">Export Mode</Label>
+          <Popover open={isExportModeOpen} onOpenChange={setIsExportModeOpen}>
+            <PopoverTrigger asChild>
+              <Button className="w-full justify-between" variant="outline">
+                <div>{exportMode === "local" ? "Local (Offline)" : "Cloud"}</div>
+                <ChevronDown width={16} />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="bg-background z-[251] w-[--radix-popover-trigger-width] px-2 py-2">
+              <div
+                className="flex h-7 items-center rounded-sm px-3 text-sm hover:cursor-pointer hover:bg-zinc-800"
+                onClick={() => {
+                  actions.setExportMode("local");
+                  setIsExportModeOpen(false);
+                }}
+              >
+                Local (Offline)
+              </div>
+              <div
+                className="flex h-7 items-center rounded-sm px-3 text-sm hover:cursor-pointer hover:bg-zinc-800"
+                onClick={() => {
+                  actions.setExportMode("cloud");
+                  setIsExportModeOpen(false);
+                }}
+              >
+                Cloud (Requires Internet)
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Export Type Selector */}
+        <div className="flex flex-col gap-2">
+          <Label className="text-xs text-muted-foreground">Format</Label>
+          <Popover open={isExportTypeOpen} onOpenChange={setIsExportTypeOpen}>
+            <PopoverTrigger asChild>
+              <Button className="w-full justify-between" variant="outline">
+                <div>{exportType.toUpperCase()}</div>
+                <ChevronDown width={16} />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="bg-background z-[251] w-[--radix-popover-trigger-width] px-2 py-2">
+              <div
+                className="flex h-7 items-center rounded-sm px-3 text-sm hover:cursor-pointer hover:bg-zinc-800"
+                onClick={() => {
+                  actions.setExportType("mp4");
+                  setIsExportTypeOpen(false);
+                }}
+              >
+                MP4
+              </div>
+              <div
+                className="flex h-7 items-center rounded-sm px-3 text-sm hover:cursor-pointer hover:bg-zinc-800"
+                onClick={() => {
+                  actions.setExportType("json");
+                  setIsExportTypeOpen(false);
+                }}
+              >
+                JSON
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
 
         <div>
           <Button onClick={handleExport} className="w-full">
-            Export
+            Export {exportMode === "local" ? "(Local)" : "(Cloud)"}
           </Button>
         </div>
       </PopoverContent>

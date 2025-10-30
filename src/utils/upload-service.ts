@@ -22,53 +22,45 @@ export async function processFileUpload(
   callbacks: UploadCallbacks
 ): Promise<any> {
   try {
-    // Get presigned URL
-    const {
-      data: { uploads }
-    } = await axios.post(
-      "/api/uploads/presign",
-      {
-        userId: "PJ1nkaufw0hZPyhN7bWCP",
-        fileNames: [file.name]
-      },
-      {
-        headers: { "Content-Type": "application/json" }
-      }
-    );
+    // Simulate upload progress for local files
+    callbacks.onProgress(uploadId, 30);
 
-    const uploadInfo = uploads[0];
+    await new Promise(resolve => setTimeout(resolve, 100));
+    callbacks.onProgress(uploadId, 60);
 
-    // Upload file with progress tracking
-    await axios.put(uploadInfo.presignedUrl, file, {
-      headers: { "Content-Type": uploadInfo.contentType },
-      onUploadProgress: (progressEvent) => {
-        const percent = Math.round(
-          (progressEvent.loaded * 100) / (progressEvent.total || 1)
-        );
-        callbacks.onProgress(uploadId, percent);
-      },
-      validateStatus: () => true
-    });
+    await new Promise(resolve => setTimeout(resolve, 100));
+    callbacks.onProgress(uploadId, 90);
 
-    // Construct upload data from uploadInfo
+    // Create local Object URL instead of uploading to external server
+    // This works completely offline
+    const localUrl = URL.createObjectURL(file);
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+    callbacks.onProgress(uploadId, 100);
+
+    // Construct upload data with local URL
     const uploadData = {
-      fileName: uploadInfo.fileName,
-      filePath: uploadInfo.filePath,
+      fileName: file.name,
+      filePath: localUrl, // Local Object URL
       fileSize: file.size,
-      contentType: uploadInfo.contentType,
-      metadata: { uploadedUrl: uploadInfo.url },
-      folder: uploadInfo.folder || null,
-      type: uploadInfo.contentType.split("/")[0],
-      method: "direct",
+      contentType: file.type,
+      metadata: { uploadedUrl: localUrl, offline: true },
+      folder: null,
+      type: file.type.split("/")[0],
+      method: "local",
       origin: "user",
       status: "uploaded",
-      isPreview: false
+      isPreview: false,
+      file: file, // Keep file reference for local rendering
+      url: localUrl
     };
 
     callbacks.onStatus(uploadId, "uploaded");
     return uploadData;
   } catch (error) {
-    callbacks.onStatus(uploadId, "failed", (error as Error).message);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    callbacks.onStatus(uploadId, "failed", errorMessage);
+    console.error("File upload error:", error);
     throw error;
   }
 }
@@ -79,45 +71,45 @@ export async function processUrlUpload(
   callbacks: UploadCallbacks
 ): Promise<any[]> {
   try {
-    // Start with 10% progress
-    callbacks.onProgress(uploadId, 10);
+    // For local mode, we'll use the URL directly
+    // This works for public URLs that don't require CORS
+    callbacks.onProgress(uploadId, 30);
 
-    // Upload URL
-    const { data: { uploads = [] } = {} } = await axios.post(
-      "/api/uploads/url",
-      {
-        userId: "PJ1nkaufw0hZPyhN7bWCP",
-        urls: [url]
-      },
-      {
-        headers: { "Content-Type": "application/json" }
-      }
-    );
+    // Try to determine file type from URL
+    const fileName = url.split('/').pop() || 'media-file';
+    let contentType = 'video/mp4'; // Default
 
-    // Update to 50% progress
-    callbacks.onProgress(uploadId, 50);
+    if (url.includes('.mp4')) contentType = 'video/mp4';
+    else if (url.includes('.webm')) contentType = 'video/webm';
+    else if (url.includes('.mp3')) contentType = 'audio/mp3';
+    else if (url.includes('.wav')) contentType = 'audio/wav';
+    else if (url.includes('.jpg') || url.includes('.jpeg')) contentType = 'image/jpeg';
+    else if (url.includes('.png')) contentType = 'image/png';
 
-    // Construct upload data from uploads array
-    const uploadDataArray = uploads.map((uploadInfo: any) => ({
-      fileName: uploadInfo.fileName,
-      filePath: uploadInfo.filePath,
+    callbacks.onProgress(uploadId, 70);
+
+    const uploadData = {
+      fileName: fileName,
+      filePath: url,
       fileSize: 0,
-      contentType: uploadInfo.contentType,
-      metadata: { originalUrl: uploadInfo.originalUrl },
-      folder: uploadInfo.folder || null,
-      type: uploadInfo.contentType.split("/")[0],
+      contentType: contentType,
+      metadata: { originalUrl: url, offline: false },
+      folder: null,
+      type: contentType.split("/")[0],
       method: "url",
       origin: "user",
       status: "uploaded",
-      isPreview: false
-    }));
+      isPreview: false,
+      url: url
+    };
 
-    // Complete
     callbacks.onProgress(uploadId, 100);
     callbacks.onStatus(uploadId, "uploaded");
-    return uploadDataArray;
+    return [uploadData];
   } catch (error) {
-    callbacks.onStatus(uploadId, "failed", (error as Error).message);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    callbacks.onStatus(uploadId, "failed", errorMessage);
+    console.error("URL upload error:", error);
     throw error;
   }
 }

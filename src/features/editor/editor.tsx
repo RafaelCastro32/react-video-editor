@@ -29,7 +29,8 @@ import { useIsLargeScreen } from "@/hooks/use-media-query";
 import { ITrackItem } from "@designcombo/types";
 import useLayoutStore from "./store/use-layout-store";
 import ControlItemHorizontal from "./control-item-horizontal";
-import { design } from "./mock";
+// import { design } from "./mock"; // Removed: Don't load mock data on startup
+import { useDownloadState } from "./store/use-download-state";
 
 const stateManager = new StateManager({
 	size: {
@@ -44,6 +45,7 @@ const Editor = ({ tempId, id }: { tempId?: string; id?: string }) => {
 	const timelinePanelRef = useRef<ImperativePanelHandle>(null);
 	const sceneRef = useRef<SceneRef>(null);
 	const { timeline, playerRef } = useStore();
+	const { actions: downloadActions } = useDownloadState();
 	const { activeIds, trackItemsMap, transitionsMap } = useStore();
 	const [loaded, setLoaded] = useState(false);
 	const [trackItem, setTrackItem] = useState<ITrackItem | null>(null);
@@ -59,9 +61,10 @@ const Editor = ({ tempId, id }: { tempId?: string; id?: string }) => {
 
 	const { setCompactFonts, setFonts } = useDataState();
 
-	useEffect(() => {
-		dispatch(DESIGN_LOAD, { payload: design });
-	}, []);
+	// Removed: Don't load mock design on startup - start with clean interface
+	// useEffect(() => {
+	// 	dispatch(DESIGN_LOAD, { payload: design });
+	// }, []);
 
 	useEffect(() => {
 		setCompactFonts(getCompactFontData(FONTS));
@@ -133,6 +136,13 @@ const Editor = ({ tempId, id }: { tempId?: string; id?: string }) => {
 	useEffect(() => {
 		setLoaded(true);
 	}, []);
+
+	// Connect player ref to download store for local rendering
+	useEffect(() => {
+		if (playerRef) {
+			downloadActions.setPlayerRef(playerRef);
+		}
+	}, [playerRef, downloadActions]);
 
 	return (
 		<div className="flex h-screen w-screen flex-col">

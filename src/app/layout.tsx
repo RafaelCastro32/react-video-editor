@@ -43,9 +43,38 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  // Remove browser extension attributes before React hydrates
+                  if (typeof document !== 'undefined') {
+                    const observer = new MutationObserver(function() {
+                      const html = document.documentElement;
+                      if (html.hasAttribute('data-lt-installed')) {
+                        html.removeAttribute('data-lt-installed');
+                      }
+                      if (html.hasAttribute('data-grammarly')) {
+                        html.removeAttribute('data-grammarly');
+                      }
+                    });
+                    observer.observe(document.documentElement, {
+                      attributes: true,
+                      attributeFilter: ['data-lt-installed', 'data-grammarly']
+                    });
+                  }
+                } catch (e) {}
+              })();
+            `
+          }}
+        />
+      </head>
       <body
         className={`${geistMono.variable} ${geist.variable} ${outfit.variable} antialiased dark font-sans bg-muted`}
+        suppressHydrationWarning
       >
         <QueryProvider>
           {children}
