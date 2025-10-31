@@ -31,6 +31,11 @@ export const useStateManagerEvents = (stateManager: StateManager) => {
 		}, 100) // 100ms debounce
 	).current;
 
+	// Debounced handlers to avoid excessive updates
+	const debouncedSetState = useRef(
+		debounce((newState) => setState(newState), 50) // 50ms debounce
+	).current;
+
 	// Handle track item updates
 	const handleTrackItemUpdate = useCallback(() => {
 		const currentState = stateManager.getState();
@@ -46,11 +51,11 @@ export const useStateManagerEvents = (stateManager: StateManager) => {
 			filterTrakcItems as (ITrackItem & (IVideo | IAudio))[]
 		);
 		
-		setState({
+		debouncedSetState({
 			duration: currentState.duration,
 			trackItemsMap: currentState.trackItemsMap,
 		});
-	}, [stateManager, setState, updateAudioDataDebounced]);
+	}, [stateManager, setState, updateAudioDataDebounced, debouncedSetState]);
 
 	const handleAddRemoveItems = useCallback(() => {
 		const currentState = stateManager.getState();
@@ -67,19 +72,19 @@ export const useStateManagerEvents = (stateManager: StateManager) => {
 			filterTrakcItems as (ITrackItem & (IVideo | IAudio))[]
 		);
 		
-		setState({
+		debouncedSetState({
 			trackItemsMap: currentState.trackItemsMap,
 			trackItemIds: currentState.trackItemIds,
 			tracks: currentState.tracks,
 		});
-	}, [stateManager, setState, updateAudioDataDebounced]);
+	}, [stateManager, setState, updateAudioDataDebounced, debouncedSetState]);
 
 	const handleUpdateItemDetails = useCallback(() => {
 		const currentState = stateManager.getState();
-		setState({
+		debouncedSetState({
 			trackItemsMap: currentState.trackItemsMap,
 		});
-	}, [stateManager, setState]);
+	}, [stateManager, setState, debouncedSetState]);
 
 	useEffect(() => {
 		console.log("useStateManagerEvents", stateManager);
@@ -103,24 +108,24 @@ export const useStateManagerEvents = (stateManager: StateManager) => {
 		// Subscribe to state update details
 		const resizeDesignSubscription = stateManager.subscribeToUpdateStateDetails(
 			(newState) => {
-				setState(newState);
+				debouncedSetState(newState);
 			},
 		);
 
 		// Subscribe to scale changes
 		const scaleSubscription = stateManager.subscribeToScale((newState) => {
-			setState(newState);
+			debouncedSetState(newState);
 		});
 
 		// Subscribe to general state changes
 		const tracksSubscription = stateManager.subscribeToState((newState) => {
-			setState(newState);
+			debouncedSetState(newState);
 		});
 
 		// Subscribe to duration changes
 		const durationSubscription = stateManager.subscribeToDuration(
 			(newState) => {
-				setState(newState);
+				debouncedSetState(newState);
 			},
 		);
 
