@@ -254,10 +254,7 @@ const BasicVideo = ({
 	];
 
 	return (
-		<div className="flex flex-1 flex-col">
-			<div className="text-text-primary flex h-12 flex-none items-center px-4 text-sm font-medium">
-				Video
-			</div>
+		<div className="flex flex-1 flex-col overflow-hidden h-full">
 			<ScrollArea className="h-full">
 				<div className="flex flex-col gap-2 px-4 py-4">
 					{components

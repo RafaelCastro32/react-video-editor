@@ -503,7 +503,7 @@ const BasicCaption = ({
 				</div>
 			)}
 
-			<div className="flex lg:h-[calc(100vh-58px)] flex-1 flex-col overflow-hidden min-h-[340px]">
+			<div className="flex flex-1 flex-col overflow-hidden h-full">
 				<ScrollArea className="h-full">
 					<div className="flex flex-col gap-2 px-4 py-4">
 						{components

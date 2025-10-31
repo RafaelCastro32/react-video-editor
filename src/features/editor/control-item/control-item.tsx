@@ -16,7 +16,7 @@ import BasicAudio from "./basic-audio";
 import useStore from "../store/use-store";
 import useLayoutStore from "../store/use-layout-store";
 import BasicCaption from "./basic-caption";
-import { GripVertical, LassoSelect } from "lucide-react";
+import { LassoSelect } from "lucide-react";
 import { Rnd } from "react-rnd";
 
 const Container = ({ children }: { children: React.ReactNode }) => {
@@ -114,25 +114,13 @@ const Container = ({ children }: { children: React.ReactNode }) => {
 			maxWidth={600}
 			maxHeight={500}
 			bounds="window"
-			dragHandleClassName="drag-handle"
 			className="shadow-2xl rounded-lg overflow-hidden border border-border/80 bg-muted z-50"
 			style={{
 				display: "flex",
 				flexDirection: "column",
 			}}
 		>
-			<div
-				className="drag-handle flex items-center justify-between px-4 py-2 bg-muted border-b border-border/80 cursor-move"
-				style={{ cursor: "move" }}
-			>
-				<div className="flex items-center gap-2">
-					<GripVertical className="w-4 h-4 text-muted-foreground" />
-					<span className="text-sm font-medium text-foreground">
-						Properties
-					</span>
-				</div>
-			</div>
-			<div className="flex-1 overflow-y-auto">
+			<div className="flex-1 overflow-hidden">
 				{React.cloneElement(children as React.ReactElement<any>, {
 					trackItem,
 				})}
