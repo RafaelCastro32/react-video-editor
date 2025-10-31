@@ -52,6 +52,9 @@ class Video extends Trimmable {
 	public itemType = "video";
 	public metadata?: Partial<IMetadata>;
 	declare src: string;
+	private isClipReady = false;
+	private clipLoadAttempts = 0;
+	private readonly MAX_CLIP_LOAD_ATTEMPTS = 3;
 
 	public aspectRatio = 1;
 	public scrollLeft = 0;
@@ -151,21 +154,97 @@ class Video extends Trimmable {
 	}
 
 	public async prepareAssets() {
-		const file = await getFileFromUrl(this.src);
-		const stream = file.stream();
+		// Previne tentativas múltiplas simultâneas
+		if (this.isClipReady) {
+			console.log(`✅ Clip already ready for ${this.id}, skipping`);
+			return;
+		}
 
-		// Dynamically import MP4Clip only on the client side
-		if (typeof window !== "undefined") {
+		// Limita tentativas
+		if (this.clipLoadAttempts >= this.MAX_CLIP_LOAD_ATTEMPTS) {
+			console.warn(`⚠️  Max load attempts reached for ${this.id}, giving up`);
+			return;
+		}
+
+		this.clipLoadAttempts++;
+		console.log(`🎬 Preparing video assets for ${this.id} (attempt ${this.clipLoadAttempts}/${this.MAX_CLIP_LOAD_ATTEMPTS})`);
+
+		// Limpa o clip anterior se existir
+		if (this.clip) {
+			try {
+				// @ts-ignore - destroy pode não existir em todos os clips
+				if (typeof this.clip.destroy === 'function') {
+					this.clip.destroy();
+				}
+			} catch (error) {
+				console.warn("Error destroying previous clip:", error);
+			}
+			this.clip = null;
+			this.isClipReady = false;
+		}
+
+		// Skip se não estiver no browser
+		if (typeof window === "undefined") {
+			this.clip = null;
+			return;
+		}
+
+		try {
+			if (!this.src) {
+				throw new Error('No video source provided');
+			}
+
+			// Usa AbortController para timeout
+			const abortController = new AbortController();
+			const timeoutId = setTimeout(() => abortController.abort(), 15000); // 15s timeout
+
+			console.log(`📥 Fetching video file for ${this.id}`);
+			const file = await getFileFromUrl(this.src);
+			console.log(`📦 File received: ${(file.size / 1024 / 1024).toFixed(2)}MB, type: ${file.type}`);
+			
+			const stream = file.stream();
+
 			try {
 				const { MP4Clip } = await import("@designcombo/frames");
+				
+				// Cria o clip
+				console.log(`🎥 Creating MP4Clip instance for ${this.id}`);
 				this.clip = new MP4Clip(stream);
+				
+				// Aguarda ready com timeout mais generoso
+				await Promise.race([
+					new Promise((resolve) => {
+						setTimeout(resolve, 1000); // 1s para inicialização
+					}),
+					new Promise((_, reject) => {
+						abortController.signal.addEventListener('abort', () => {
+							reject(new Error('MP4Clip initialization timeout'));
+						});
+					})
+				]);
+
+				clearTimeout(timeoutId);
+				this.isClipReady = true;
+				console.log(`✅ Video assets prepared successfully for ${this.id}`);
 			} catch (error) {
-				console.warn("Failed to load MP4Clip:", error);
-				this.clip = null;
+				clearTimeout(timeoutId);
+				console.error(`❌ Error in MP4Clip creation for ${this.id}:`, error);
+				throw error;
 			}
-		} else {
-			// Server-side rendering - skip MP4Clip initialization
+		} catch (error) {
+			console.error(`❌ Failed to load MP4Clip for ${this.id} (attempt ${this.clipLoadAttempts}):`, error);
 			this.clip = null;
+			this.isClipReady = false;
+			
+			// Retry automático se não atingiu o limite
+			if (this.clipLoadAttempts < this.MAX_CLIP_LOAD_ATTEMPTS) {
+				console.log(`🔄 Retrying in 2s...`);
+				setTimeout(() => {
+					this.prepareAssets();
+				}, 2000);
+			} else {
+				console.warn(`⚠️  Failed to load video after ${this.MAX_CLIP_LOAD_ATTEMPTS} attempts`);
+			}
 		}
 	}
 
@@ -304,10 +383,21 @@ class Video extends Trimmable {
 		this.canvas?.requestRenderAll();
 	}
 	public async loadAndRenderThumbnails() {
-		if (this.isFetchingThumbnails || !this.clip) return;
+		// Previne múltiplas requisições simultâneas
+		if (this.isFetchingThumbnails) {
+			return; // Silencioso agora
+		}
+		
+		if (!this.clip || !this.isClipReady) {
+			// Silencioso - não polui o console
+			return;
+		}
+
 		// set segmentDrawn to segmentToDraw
 		this.loadingFilmstrip = { ...this.nextFilmstrip };
 		this.isFetchingThumbnails = true;
+
+		console.log(`🖼️  Loading thumbnails for ${this.id}`);
 
 		// Calculate dimensions and offsets
 		const { startTime, thumbnailsCount } = this.loadingFilmstrip;

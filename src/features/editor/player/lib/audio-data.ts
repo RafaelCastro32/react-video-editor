@@ -16,32 +16,55 @@ export class AudioDataManager {
 	private readonly MAX_CACHE_SIZE = 10;
 	private frameCache: Map<number, number[]> = new Map();
 	private readonly CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+	private loadingPromises: Map<string, Promise<void>> = new Map(); // Previne carregamentos duplicados
 
 	public setAudioDataManager(fps: number) {
 		this.fps = fps;
 	}
 
 	private async loadAudioData(src: string, id: string): Promise<void> {
-		try {
-			console.log("Loading audio data for", src);
-			const data = await getAudioData(src);
-			this.audioDatas[id] = {
-				data,
-				lastAccessed: Date.now(),
-			};
-			this.cleanupCache();
-		} catch (error) {
-			console.error(`Error loading audio data for ${src}:`, error);
-
-			// If it's an EncodingError (no audio track), just ignore it
-			if (error instanceof Error && error.name === "EncodingError") {
-				console.log(`No audio track found for ${src}, ignoring`);
-				return;
-			}
-
-			// For other errors, still throw them
-			throw error;
+		// Se já existe um carregamento em andamento para este ID, retorna a promise existente
+		if (this.loadingPromises.has(id)) {
+			console.log(`⏳ Audio data already loading for ${id}, waiting...`);
+			return this.loadingPromises.get(id);
 		}
+
+		// Se já tem o dado em cache, não recarrega
+		if (this.audioDatas[id]) {
+			console.log(`✅ Audio data already cached for ${id}`);
+			this.audioDatas[id].lastAccessed = Date.now();
+			return;
+		}
+
+		const loadingPromise = (async () => {
+			try {
+				console.log("🔄 Loading audio data for", src);
+				const data = await getAudioData(src);
+				this.audioDatas[id] = {
+					data,
+					lastAccessed: Date.now(),
+				};
+				console.log(`✅ Audio data loaded successfully for ${id}`);
+				this.cleanupCache();
+			} catch (error) {
+				console.error(`❌ Error loading audio data for ${src}:`, error);
+
+				// If it's an EncodingError (no audio track), just ignore it
+				if (error instanceof Error && error.name === "EncodingError") {
+					console.log(`ℹ️  No audio track found for ${src}, ignoring`);
+					return;
+				}
+
+				// For other errors, still throw them
+				throw error;
+			} finally {
+				// Remove da lista de carregamentos após concluir
+				this.loadingPromises.delete(id);
+			}
+		})();
+
+		this.loadingPromises.set(id, loadingPromise);
+		return loadingPromise;
 	}
 
 	private cleanupCache(): void {
@@ -67,6 +90,12 @@ export class AudioDataManager {
 	}
 
 	public async setItems(items: (ITrackItem & (IVideo | IAudio))[]) {
+		// Previne chamadas desnecessárias se os items não mudaram
+		if (isEqual(items, this.items)) {
+			console.log('🔵 Items não mudaram, pulando setItems');
+			return;
+		}
+
 		const newItemIds = items.map((item) => item.id);
 		const currentItemIds = this.items.map((item) => item.id);
 		const addItemIds = newItemIds.filter((id) => !currentItemIds.includes(id));
@@ -74,20 +103,23 @@ export class AudioDataManager {
 			(id) => !newItemIds.includes(id),
 		);
 
+		console.log(`🔄 setItems - Adding: ${addItemIds.length}, Removing: ${removeItemIds.length}`);
+
 		// Remove items
 		for (const id of removeItemIds) {
 			this.removeItem(id);
 		}
 
-		// Add new items
-		await Promise.all(
-			addItemIds.map(async (id) => {
-				const item = items.find((item) => item.id === id);
-				if (item?.details.src) {
-					await this.loadAudioData(item.details.src, id);
-				}
-			}),
-		);
+		// Add new items (sem await para não bloquear)
+		for (const id of addItemIds) {
+			const item = items.find((item) => item.id === id);
+			if (item?.details.src) {
+				// Fire and forget - não bloqueia
+				this.loadAudioData(item.details.src, id).catch((error) => {
+					console.error(`Failed to load audio for ${id}:`, error);
+				});
+			}
+		}
 
 		this.items = items;
 		this.frameCache.clear(); // Clear frame cache when items change
@@ -96,12 +128,17 @@ export class AudioDataManager {
 	public validateUpdateItems(
 		validateItems: (ITrackItem & (IVideo | IAudio))[],
 	) {
+		let updatedCount = 0;
 		for (const item of validateItems) {
 			for (const audioDataItem of this.items) {
 				if (!isEqual(audioDataItem, item) && audioDataItem.id === item.id) {
 					this.updateItem(item);
+					updatedCount++;
 				}
 			}
+		}
+		if (updatedCount > 0) {
+			console.log(`🔄 validateUpdateItems - Updated ${updatedCount} items`);
 		}
 	}
 

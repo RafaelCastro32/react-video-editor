@@ -8,6 +8,8 @@ import {
 import { QueryProvider } from "@/components/query-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { Outfit } from "next/font/google";
+import { ErrorMonitorInitializer } from "@/components/error-monitor-initializer";
+import { DebugPanel } from "@/components/debug-panel";
 
 import "./globals.css";
 
@@ -80,6 +82,8 @@ export default async function RootLayout({
 					{children}
 					<StoreInitializer />
 					<BackgroundUploadRunner />
+					<ErrorMonitorInitializer />
+					<DebugPanel />
 					<Toaster />
 				</QueryProvider>
 				<Analytics />

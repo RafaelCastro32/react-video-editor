@@ -7,9 +7,29 @@ import { audioDataManager } from "../player/lib/audio-data";
 // Global registry to prevent duplicate subscriptions
 const subscriptionRegistry = new WeakMap<StateManager, Set<string>>();
 
+// Debounce helper
+function debounce<T extends (...args: any[]) => any>(
+	func: T,
+	wait: number
+): (...args: Parameters<T>) => void {
+	let timeout: NodeJS.Timeout | null = null;
+	return function executedFunction(...args: Parameters<T>) {
+		if (timeout) clearTimeout(timeout);
+		timeout = setTimeout(() => func(...args), wait);
+	};
+}
+
 export const useStateManagerEvents = (stateManager: StateManager) => {
 	const { setState } = useStore();
 	const isSubscribedRef = useRef(false);
+
+	// Debounced version of audio data updates (previne chamadas múltiplas)
+	const updateAudioDataDebounced = useRef(
+		debounce((items: (ITrackItem & (IVideo | IAudio))[]) => {
+			audioDataManager.setItems(items);
+			audioDataManager.validateUpdateItems(items);
+		}, 100) // 100ms debounce
+	).current;
 
 	// Handle track item updates
 	const handleTrackItemUpdate = useCallback(() => {
@@ -20,17 +40,17 @@ export const useStateManagerEvents = (stateManager: StateManager) => {
 				return item.type === "video" || item.type === "audio";
 			},
 		);
-		audioDataManager.setItems(
-			filterTrakcItems as (ITrackItem & (IVideo | IAudio))[],
+		
+		// Usa versão debounced para evitar chamadas excessivas
+		updateAudioDataDebounced(
+			filterTrakcItems as (ITrackItem & (IVideo | IAudio))[]
 		);
-		audioDataManager.validateUpdateItems(
-			filterTrakcItems as (ITrackItem & (IVideo | IAudio))[],
-		);
+		
 		setState({
 			duration: currentState.duration,
 			trackItemsMap: currentState.trackItemsMap,
 		});
-	}, [stateManager, setState]);
+	}, [stateManager, setState, updateAudioDataDebounced]);
 
 	const handleAddRemoveItems = useCallback(() => {
 		const currentState = stateManager.getState();
@@ -41,15 +61,18 @@ export const useStateManagerEvents = (stateManager: StateManager) => {
 				return item.type === "video" || item.type === "audio";
 			},
 		);
-		audioDataManager.validateUpdateItems(
-			filterTrakcItems as (ITrackItem & (IVideo | IAudio))[],
+		
+		// Usa versão debounced
+		updateAudioDataDebounced(
+			filterTrakcItems as (ITrackItem & (IVideo | IAudio))[]
 		);
+		
 		setState({
 			trackItemsMap: currentState.trackItemsMap,
 			trackItemIds: currentState.trackItemIds,
 			tracks: currentState.tracks,
 		});
-	}, [stateManager, setState]);
+	}, [stateManager, setState, updateAudioDataDebounced]);
 
 	const handleUpdateItemDetails = useCallback(() => {
 		const currentState = stateManager.getState();
