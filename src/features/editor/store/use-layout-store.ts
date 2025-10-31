@@ -13,6 +13,12 @@ const useLayoutStore = create<ILayoutState>((set) => ({
 	controItemDrawerOpen: false,
 	typeControlItem: "",
 	labelControlItem: "",
+	controlPanelPosition: {
+		x: typeof window !== "undefined" ? window.innerWidth - 340 : 100, // Start at right side with 20px margin
+		y: 100,
+	},
+	controlPanelSize: { width: 320, height: 400 }, // Default size
+	timelineHeight: 300, // Default timeline height
 	setCropTarget: (cropTarget) => set({ cropTarget }),
 	setActiveMenuItem: (showMenu) => set({ activeMenuItem: showMenu }),
 	setShowMenuItem: (showMenuItem) => set({ showMenuItem }),
@@ -27,6 +33,10 @@ const useLayoutStore = create<ILayoutState>((set) => ({
 		set({ controItemDrawerOpen }),
 	setTypeControlItem: (typeControlItem) => set({ typeControlItem }),
 	setLabelControlItem: (labelControlItem) => set({ labelControlItem }),
+	setControlPanelPosition: (position) =>
+		set({ controlPanelPosition: position }),
+	setControlPanelSize: (size) => set({ controlPanelSize: size }),
+	setTimelineHeight: (height) => set({ timelineHeight: height }),
 }));
 
 export default useLayoutStore;

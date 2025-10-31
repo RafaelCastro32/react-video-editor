@@ -27,6 +27,9 @@ export interface ILayoutState {
 	controItemDrawerOpen: boolean;
 	typeControlItem: string;
 	labelControlItem: string;
+	controlPanelPosition: { x: number; y: number };
+	controlPanelSize: { width: number; height: number };
+	timelineHeight: number;
 	setCropTarget: (cropTarget: ITrackItem | null) => void;
 	setActiveMenuItem: (showMenu: IMenuItem | null) => void;
 	setShowMenuItem: (showMenuItem: boolean) => void;
@@ -39,4 +42,7 @@ export interface ILayoutState {
 	setControItemDrawerOpen: (controItemDrawerOpen: boolean) => void;
 	setTypeControlItem: (typeControlItem: string) => void;
 	setLabelControlItem: (labelControlItem: string) => void;
+	setControlPanelPosition: (position: { x: number; y: number }) => void;
+	setControlPanelSize: (size: { width: number; height: number }) => void;
+	setTimelineHeight: (height: number) => void;
 }

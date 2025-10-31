@@ -54,6 +54,7 @@ const Editor = ({ tempId, id }: { tempId?: string; id?: string }) => {
 		setFloatingControl,
 		setLabelControlItem,
 		setTypeControlItem,
+		setTimelineHeight,
 	} = useLayoutStore();
 	const isLargeScreen = useIsLargeScreen();
 
@@ -90,6 +91,9 @@ const Editor = ({ tempId, id }: { tempId?: string; id?: string }) => {
 	const handleTimelineResize = () => {
 		const timelineContainer = document.getElementById("timeline-container");
 		if (!timelineContainer) return;
+
+		// Update timeline height in layout store
+		setTimelineHeight(timelineContainer.clientHeight);
 
 		timeline?.resize(
 			{

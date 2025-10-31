@@ -16,12 +16,20 @@ import BasicAudio from "./basic-audio";
 import useStore from "../store/use-store";
 import useLayoutStore from "../store/use-layout-store";
 import BasicCaption from "./basic-caption";
-import { LassoSelect } from "lucide-react";
+import { GripVertical, LassoSelect } from "lucide-react";
+import { Rnd } from "react-rnd";
 
 const Container = ({ children }: { children: React.ReactNode }) => {
 	const { activeIds, trackItemsMap, transitionsMap } = useStore();
 	const [trackItem, setTrackItem] = useState<ITrackItem | null>(null);
-	const { setTrackItem: setLayoutTrackItem } = useLayoutStore();
+	const {
+		setTrackItem: setLayoutTrackItem,
+		controlPanelPosition,
+		controlPanelSize,
+		setControlPanelPosition,
+		setControlPanelSize,
+		timelineHeight,
+	} = useLayoutStore();
 
 	useEffect(() => {
 		if (activeIds.length === 1) {
@@ -30,6 +38,17 @@ const Container = ({ children }: { children: React.ReactNode }) => {
 			if (trackItem) {
 				setTrackItem(trackItem);
 				setLayoutTrackItem(trackItem);
+
+				// On first open, position panel on the right side
+				const screenWidth = window.innerWidth;
+				const rightX = screenWidth - controlPanelSize.width - 20; // 20px margin from right
+				if (controlPanelPosition.x === 100) {
+					// Only if still at default position
+					setControlPanelPosition({
+						x: rightX,
+						y: controlPanelPosition.y,
+					});
+				}
 			} else console.log(transitionsMap[id]);
 		} else {
 			setTrackItem(null);
@@ -37,12 +56,88 @@ const Container = ({ children }: { children: React.ReactNode }) => {
 		}
 	}, [activeIds, trackItemsMap]);
 
+	// Calculate panel height and position based on timeline height
+	useEffect(() => {
+		const NAVBAR_HEIGHT = 0;// Height of navbar
+		const SPACING = 65; // Spacing between panel and timeline
+		const MIN_HEIGHT = 100;
+		const MAX_HEIGHT =1000;
+
+		const screenHeight = window.innerHeight;
+
+		// Calculate available height (screen - navbar - timeline - spacing)
+		const availableHeight =
+			screenHeight - NAVBAR_HEIGHT - timelineHeight - SPACING;
+		const newHeight = Math.min(
+			MAX_HEIGHT,
+			Math.max(MIN_HEIGHT, availableHeight),
+		);
+
+		// Calculate Y position so panel ends before timeline starts
+		// Timeline starts at (screenHeight - timelineHeight)
+		// Panel should end at (screenHeight - timelineHeight - SPACING)
+		const newY = screenHeight - timelineHeight - SPACING - newHeight;
+
+		// Ensure panel doesn't go above navbar
+		const finalY = Math.max(NAVBAR_HEIGHT + 10, newY);
+
+		setControlPanelSize({
+			width: controlPanelSize.width,
+			height: newHeight,
+		});
+
+		setControlPanelPosition({
+			x: controlPanelPosition.x,
+			y: finalY,
+		});
+	}, [timelineHeight]);
+
+	// Don't show panel if no item is selected
+	if (!trackItem) return null;
+
 	return (
-		<div className="flex w-[272px] flex-none border-l border-border/80 bg-muted hidden lg:block">
-			{React.cloneElement(children as React.ReactElement<any>, {
-				trackItem,
-			})}
-		</div>
+		<Rnd
+			size={controlPanelSize}
+			position={controlPanelPosition}
+			onDragStop={(e, d) => {
+				setControlPanelPosition({ x: d.x, y: d.y });
+			}}
+			onResizeStop={(e, direction, ref, delta, position) => {
+				setControlPanelSize({
+					width: ref.offsetWidth,
+					height: ref.offsetHeight,
+				});
+				setControlPanelPosition(position);
+			}}
+			minWidth={280}
+			minHeight={250}
+			maxWidth={600}
+			maxHeight={500}
+			bounds="window"
+			dragHandleClassName="drag-handle"
+			className="shadow-2xl rounded-lg overflow-hidden border border-border/80 bg-muted z-50"
+			style={{
+				display: "flex",
+				flexDirection: "column",
+			}}
+		>
+			<div
+				className="drag-handle flex items-center justify-between px-4 py-2 bg-muted border-b border-border/80 cursor-move"
+				style={{ cursor: "move" }}
+			>
+				<div className="flex items-center gap-2">
+					<GripVertical className="w-4 h-4 text-muted-foreground" />
+					<span className="text-sm font-medium text-foreground">
+						Properties
+					</span>
+				</div>
+			</div>
+			<div className="flex-1 overflow-y-auto">
+				{React.cloneElement(children as React.ReactElement<any>, {
+					trackItem,
+				})}
+			</div>
+		</Rnd>
 	);
 };
 
@@ -51,14 +146,8 @@ const ActiveControlItem = ({
 }: {
 	trackItem?: ITrackItemAndDetails;
 }) => {
-	if (!trackItem) {
-		return (
-			<div className="pb-32 flex flex-1 flex-col items-center justify-center gap-4 text-muted-foreground h-[calc(100vh-58px)]">
-				<LassoSelect />
-				<span className="text-zinc-500">No item selected</span>
-			</div>
-		);
-	}
+	if (!trackItem) return null;
+
 	return (
 		<>
 			{

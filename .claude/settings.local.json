@@ -1,7 +1,11 @@
 {
-	"permissions": {
-		"allow": ["Bash(pnpm format:*)"],
-		"deny": [],
-		"ask": []
-	}
+  "permissions": {
+    "allow": [
+      "Bash(pnpm format:*)",
+      "Bash(pnpm add:*)",
+      "Bash(npx tsc:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
 }
