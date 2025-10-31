@@ -14,203 +14,203 @@ import Brightness from "./common/brightness";
 import Flip from "./common/flip";
 
 const BasicImage = ({ trackItem }: { trackItem: ITrackItem & IImage }) => {
-  const [properties, setProperties] = useState(trackItem);
-  useEffect(() => {
-    setProperties(trackItem);
-  }, [trackItem]);
+	const [properties, setProperties] = useState(trackItem);
+	useEffect(() => {
+		setProperties(trackItem);
+	}, [trackItem]);
 
-  const onChangeBorderWidth = (v: number) => {
-    dispatch(EDIT_OBJECT, {
-      payload: {
-        [trackItem.id]: {
-          details: {
-            borderWidth: v
-          }
-        }
-      }
-    });
-    setProperties((prev) => {
-      return {
-        ...prev,
-        details: {
-          ...prev.details,
-          borderWidth: v
-        }
-      };
-    });
-  };
+	const onChangeBorderWidth = (v: number) => {
+		dispatch(EDIT_OBJECT, {
+			payload: {
+				[trackItem.id]: {
+					details: {
+						borderWidth: v,
+					},
+				},
+			},
+		});
+		setProperties((prev) => {
+			return {
+				...prev,
+				details: {
+					...prev.details,
+					borderWidth: v,
+				},
+			};
+		});
+	};
 
-  const onChangeBorderColor = (v: string) => {
-    dispatch(EDIT_OBJECT, {
-      payload: {
-        [trackItem.id]: {
-          details: {
-            borderColor: v
-          }
-        }
-      }
-    });
-    setProperties((prev) => {
-      return {
-        ...prev,
-        details: {
-          ...prev.details,
-          borderColor: v
-        }
-      };
-    });
-  };
+	const onChangeBorderColor = (v: string) => {
+		dispatch(EDIT_OBJECT, {
+			payload: {
+				[trackItem.id]: {
+					details: {
+						borderColor: v,
+					},
+				},
+			},
+		});
+		setProperties((prev) => {
+			return {
+				...prev,
+				details: {
+					...prev.details,
+					borderColor: v,
+				},
+			};
+		});
+	};
 
-  const handleChangeOpacity = (v: number) => {
-    dispatch(EDIT_OBJECT, {
-      payload: {
-        [trackItem.id]: {
-          details: {
-            opacity: v
-          }
-        }
-      }
-    });
-    setProperties((prev) => {
-      return {
-        ...prev,
-        details: {
-          ...prev.details,
-          opacity: v
-        }
-      };
-    });
-  };
+	const handleChangeOpacity = (v: number) => {
+		dispatch(EDIT_OBJECT, {
+			payload: {
+				[trackItem.id]: {
+					details: {
+						opacity: v,
+					},
+				},
+			},
+		});
+		setProperties((prev) => {
+			return {
+				...prev,
+				details: {
+					...prev.details,
+					opacity: v,
+				},
+			};
+		});
+	};
 
-  const onChangeBlur = (v: number) => {
-    dispatch(EDIT_OBJECT, {
-      payload: {
-        [trackItem.id]: {
-          details: {
-            blur: v
-          }
-        }
-      }
-    });
-    setProperties((prev) => {
-      return {
-        ...prev,
-        details: {
-          ...prev.details,
-          blur: v
-        }
-      };
-    });
-  };
-  const onChangeBrightness = (v: number) => {
-    dispatch(EDIT_OBJECT, {
-      payload: {
-        [trackItem.id]: {
-          details: {
-            brightness: v
-          }
-        }
-      }
-    });
-    setProperties((prev) => {
-      return {
-        ...prev,
-        details: {
-          ...prev.details,
-          brightness: v
-        }
-      };
-    });
-  };
+	const onChangeBlur = (v: number) => {
+		dispatch(EDIT_OBJECT, {
+			payload: {
+				[trackItem.id]: {
+					details: {
+						blur: v,
+					},
+				},
+			},
+		});
+		setProperties((prev) => {
+			return {
+				...prev,
+				details: {
+					...prev.details,
+					blur: v,
+				},
+			};
+		});
+	};
+	const onChangeBrightness = (v: number) => {
+		dispatch(EDIT_OBJECT, {
+			payload: {
+				[trackItem.id]: {
+					details: {
+						brightness: v,
+					},
+				},
+			},
+		});
+		setProperties((prev) => {
+			return {
+				...prev,
+				details: {
+					...prev.details,
+					brightness: v,
+				},
+			};
+		});
+	};
 
-  const onChangeBorderRadius = (v: number) => {
-    dispatch(EDIT_OBJECT, {
-      payload: {
-        [trackItem.id]: {
-          details: {
-            borderRadius: v
-          }
-        }
-      }
-    });
-    setProperties((prev) => {
-      return {
-        ...prev,
-        details: {
-          ...prev.details,
-          borderRadius: v
-        }
-      };
-    });
-  };
+	const onChangeBorderRadius = (v: number) => {
+		dispatch(EDIT_OBJECT, {
+			payload: {
+				[trackItem.id]: {
+					details: {
+						borderRadius: v,
+					},
+				},
+			},
+		});
+		setProperties((prev) => {
+			return {
+				...prev,
+				details: {
+					...prev.details,
+					borderRadius: v,
+				},
+			};
+		});
+	};
 
-  const onChangeBoxShadow = (boxShadow: IBoxShadow) => {
-    dispatch(EDIT_OBJECT, {
-      payload: {
-        [trackItem.id]: {
-          details: {
-            boxShadow: boxShadow
-          }
-        }
-      }
-    });
+	const onChangeBoxShadow = (boxShadow: IBoxShadow) => {
+		dispatch(EDIT_OBJECT, {
+			payload: {
+				[trackItem.id]: {
+					details: {
+						boxShadow: boxShadow,
+					},
+				},
+			},
+		});
 
-    setProperties((prev) => {
-      return {
-        ...prev,
-        details: {
-          ...prev.details,
-          boxShadow
-        }
-      };
-    });
-  };
-  return (
-    <div className="flex-1 flex flex-col">
-      <div className="text-sm text-text-primary font-medium h-12  flex items-center px-4 flex-none">
-        Image
-      </div>
-      <ScrollArea className="h-full">
-        <div className="px-4 flex flex-col gap-2">
-          <div className="flex gap-2 items-center">
-            <Button variant={"secondary"} size={"icon"}>
-              <Crop size={18} />
-            </Button>
-          </div>
-          <AspectRatio />
-          <Flip trackItem={trackItem} />
-          <Rounded
-            onChange={(v: number) => onChangeBorderRadius(v)}
-            value={properties.details.borderRadius as number}
-          />
-          <Outline
-            label="Outline"
-            onChageBorderWidth={(v: number) => onChangeBorderWidth(v)}
-            onChangeBorderColor={(v: string) => onChangeBorderColor(v)}
-            valueBorderWidth={properties.details.borderWidth as number}
-            valueBorderColor={properties.details.borderColor as string}
-          />
-          <Shadow
-            label="Shadow"
-            onChange={(v: IBoxShadow) => onChangeBoxShadow(v)}
-            value={properties.details.boxShadow!}
-          />
-          <Opacity
-            onChange={(v: number) => handleChangeOpacity(v)}
-            value={properties.details.opacity!}
-          />
-          <Blur
-            onChange={(v: number) => onChangeBlur(v)}
-            value={properties.details.blur!}
-          />
-          <Brightness
-            onChange={(v: number) => onChangeBrightness(v)}
-            value={properties.details.brightness!}
-          />
-        </div>
-      </ScrollArea>
-    </div>
-  );
+		setProperties((prev) => {
+			return {
+				...prev,
+				details: {
+					...prev.details,
+					boxShadow,
+				},
+			};
+		});
+	};
+	return (
+		<div className="flex-1 flex flex-col">
+			<div className="text-sm text-text-primary font-medium h-12  flex items-center px-4 flex-none">
+				Image
+			</div>
+			<ScrollArea className="h-full">
+				<div className="px-4 flex flex-col gap-2">
+					<div className="flex gap-2 items-center">
+						<Button variant={"secondary"} size={"icon"}>
+							<Crop size={18} />
+						</Button>
+					</div>
+					<AspectRatio />
+					<Flip trackItem={trackItem} />
+					<Rounded
+						onChange={(v: number) => onChangeBorderRadius(v)}
+						value={properties.details.borderRadius as number}
+					/>
+					<Outline
+						label="Outline"
+						onChageBorderWidth={(v: number) => onChangeBorderWidth(v)}
+						onChangeBorderColor={(v: string) => onChangeBorderColor(v)}
+						valueBorderWidth={properties.details.borderWidth as number}
+						valueBorderColor={properties.details.borderColor as string}
+					/>
+					<Shadow
+						label="Shadow"
+						onChange={(v: IBoxShadow) => onChangeBoxShadow(v)}
+						value={properties.details.boxShadow!}
+					/>
+					<Opacity
+						onChange={(v: number) => handleChangeOpacity(v)}
+						value={properties.details.opacity!}
+					/>
+					<Blur
+						onChange={(v: number) => onChangeBlur(v)}
+						value={properties.details.blur!}
+					/>
+					<Brightness
+						onChange={(v: number) => onChangeBrightness(v)}
+						value={properties.details.brightness!}
+					/>
+				</div>
+			</ScrollArea>
+		</div>
+	);
 };
 
 export default BasicImage;

@@ -29,198 +29,198 @@ import PulseText from "./text-animated-types/animations-loop/pulse";
 import { renderFullTextAnimation } from "./text-animated-full";
 
 const animationsIn: { [key: string]: React.FC<any> } = {
-  animatedTextIn: AnimatedTextIn,
-  sunnyMorningsAnimationIn: SunnyMorningsAnimationIn,
-  dominoDreamsIn: DominoDreamsIn,
-  greatThinkersAnimationIn: GetThinkersAnimationIn,
-  beautifulQuestionsAnimationIn: BeatifulQuestionAnimationIn,
-  madeWithLoveAnimationIn: MadeWithLoveAnimationIn,
-  realityIsBrokenAnimationIn: RealityIsBrokenAnimationIn,
-  dropAnimationIn: DropAnimationIn,
-  descompressAnimationIn: DescompressAnimationIn
+	animatedTextIn: AnimatedTextIn,
+	sunnyMorningsAnimationIn: SunnyMorningsAnimationIn,
+	dominoDreamsIn: DominoDreamsIn,
+	greatThinkersAnimationIn: GetThinkersAnimationIn,
+	beautifulQuestionsAnimationIn: BeatifulQuestionAnimationIn,
+	madeWithLoveAnimationIn: MadeWithLoveAnimationIn,
+	realityIsBrokenAnimationIn: RealityIsBrokenAnimationIn,
+	dropAnimationIn: DropAnimationIn,
+	descompressAnimationIn: DescompressAnimationIn,
 };
 
 const animationsOut: { [key: string]: React.FC<any> } = {
-  animatedTextOut: AnimatedTextOut,
-  sunnyMorningsAnimationOut: SunnyMorningsAnimationOut,
-  dominoDreamsAnimationOut: DominoDreamsAnimationOut,
-  beautifulQuestionsAnimationOut: BeatifulQuestionAnimationOut,
-  madeWithLoveAnimationOut: MadeWithLoveAnimationOut,
-  realityIsBrokenAnimationOut: RealityIsBrokenAnimationOut,
-  greatThinkersAnimationOut: GreatThinkersAnimationOut,
-  descompressAnimationOut: DescompressAnimationOut,
-  dropAnimationOut: DropAnimationOut
+	animatedTextOut: AnimatedTextOut,
+	sunnyMorningsAnimationOut: SunnyMorningsAnimationOut,
+	dominoDreamsAnimationOut: DominoDreamsAnimationOut,
+	beautifulQuestionsAnimationOut: BeatifulQuestionAnimationOut,
+	madeWithLoveAnimationOut: MadeWithLoveAnimationOut,
+	realityIsBrokenAnimationOut: RealityIsBrokenAnimationOut,
+	greatThinkersAnimationOut: GreatThinkersAnimationOut,
+	descompressAnimationOut: DescompressAnimationOut,
+	dropAnimationOut: DropAnimationOut,
 };
 
 const animationsLoop: { [key: string]: React.FC<any> } = {
-  vogueAnimationLoop: VogueLetterByLetter,
-  dragonFlyAnimationLoop: DragonflyText,
-  billboardAnimationLoop: BillboardText,
-  heartbeatAnimationLoop: Heartbeat,
-  waveAnimationLoop: Wave,
-  shakyLettersTextAnimationLoop: ShakyLettersText,
-  pulseAnimationLoop: PulseText
+	vogueAnimationLoop: VogueLetterByLetter,
+	dragonFlyAnimationLoop: DragonflyText,
+	billboardAnimationLoop: BillboardText,
+	heartbeatAnimationLoop: Heartbeat,
+	waveAnimationLoop: Wave,
+	shakyLettersTextAnimationLoop: ShakyLettersText,
+	pulseAnimationLoop: PulseText,
 };
 
 const getTextLines = (
-  text: string,
-  width: number,
-  fontSize: number
+	text: string,
+	width: number,
+	fontSize: number,
 ): string[] => {
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
+	const canvas = document.createElement("canvas");
+	const context = canvas.getContext("2d");
 
-  if (!context) return [];
+	if (!context) return [];
 
-  context.font = `${fontSize}px Arial`;
-  const words = text.split(" ");
-  let lines: string[] = [];
-  let currentLine = "";
+	context.font = `${fontSize}px Arial`;
+	const words = text.split(" ");
+	let lines: string[] = [];
+	let currentLine = "";
 
-  words.forEach((word) => {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    const textWidth = context.measureText(testLine).width;
+	words.forEach((word) => {
+		const testLine = currentLine ? `${currentLine} ${word}` : word;
+		const textWidth = context.measureText(testLine).width;
 
-    if (textWidth > width) {
-      lines.push(currentLine);
-      currentLine = word;
-    } else {
-      currentLine = testLine;
-    }
-  });
+		if (textWidth > width) {
+			lines.push(currentLine);
+			currentLine = word;
+		} else {
+			currentLine = testLine;
+		}
+	});
 
-  if (currentLine) lines.push(currentLine);
+	if (currentLine) lines.push(currentLine);
 
-  return lines;
+	return lines;
 };
 
 export const TextAnimated: React.FC<{
-  text: string;
-  fps: number;
-  textAnimationNameIn: string;
-  textAnimationNameOut: string;
-  textAnimationNameLoop: string;
-  details: ITextDetails;
-  animationTextInFrames: number;
-  animationTextOutFrames: number;
-  animationTextLoopFrames: number;
-  durationInFrames: number;
-  animationFonts: { fontFamily: string; url: string }[];
+	text: string;
+	fps: number;
+	textAnimationNameIn: string;
+	textAnimationNameOut: string;
+	textAnimationNameLoop: string;
+	details: ITextDetails;
+	animationTextInFrames: number;
+	animationTextOutFrames: number;
+	animationTextLoopFrames: number;
+	durationInFrames: number;
+	animationFonts: { fontFamily: string; url: string }[];
 }> = ({
-  text,
-  fps,
-  textAnimationNameIn,
-  textAnimationNameOut,
-  textAnimationNameLoop,
-  details,
-  animationTextInFrames,
-  animationTextOutFrames,
-  animationTextLoopFrames,
-  durationInFrames,
-  animationFonts
+	text,
+	fps,
+	textAnimationNameIn,
+	textAnimationNameOut,
+	textAnimationNameLoop,
+	details,
+	animationTextInFrames,
+	animationTextOutFrames,
+	animationTextLoopFrames,
+	durationInFrames,
+	animationFonts,
 }) => {
-  const frame = useCurrentFrame();
-  const animInFrom = animationTextInFrames;
-  const animOut = durationInFrames - animationTextOutFrames;
-  const validAnimIn = textAnimationNameIn ? animInFrom >= frame : false;
-  const validAnimOut = textAnimationNameOut ? animOut < frame : false;
-  if (!validAnimOut && !validAnimIn) {
-    return (
-      <div
-        style={{
-          whiteSpace: "pre-line",
-          maxWidth: "100%"
-        }}
-      >
-        {text}
-      </div>
-    );
-  }
+	const frame = useCurrentFrame();
+	const animInFrom = animationTextInFrames;
+	const animOut = durationInFrames - animationTextOutFrames;
+	const validAnimIn = textAnimationNameIn ? animInFrom >= frame : false;
+	const validAnimOut = textAnimationNameOut ? animOut < frame : false;
+	if (!validAnimOut && !validAnimIn) {
+		return (
+			<div
+				style={{
+					whiteSpace: "pre-line",
+					maxWidth: "100%",
+				}}
+			>
+				{text}
+			</div>
+		);
+	}
 
-  const lines = getTextLines(text, details.width, details.fontSize);
+	const lines = getTextLines(text, details.width, details.fontSize);
 
-  const fullTextAnimation = renderFullTextAnimation({
-    frame,
-    text,
-    details,
-    fps,
-    durationInFrames,
-    animationTextInFrames,
-    animationTextOutFrames,
-    animationTextLoopFrames,
-    animationFonts,
-    validAnimIn,
-    validAnimOut,
-    textAnimationNameIn,
-    textAnimationNameOut,
-    textAnimationNameLoop
-  });
+	const fullTextAnimation = renderFullTextAnimation({
+		frame,
+		text,
+		details,
+		fps,
+		durationInFrames,
+		animationTextInFrames,
+		animationTextOutFrames,
+		animationTextLoopFrames,
+		animationFonts,
+		validAnimIn,
+		validAnimOut,
+		textAnimationNameIn,
+		textAnimationNameOut,
+		textAnimationNameLoop,
+	});
 
-  if (fullTextAnimation) {
-    return fullTextAnimation;
-  }
+	if (fullTextAnimation) {
+		return fullTextAnimation;
+	}
 
-  const maxTextLengthInLine = lines.reduce(
-    (max, line) => Math.max(max, line.length),
-    0
-  );
+	const maxTextLengthInLine = lines.reduce(
+		(max, line) => Math.max(max, line.length),
+		0,
+	);
 
-  const AnimationComponentIn = animationsIn[textAnimationNameIn];
-  const AnimationComponentOut = animationsOut[textAnimationNameOut];
-  const AnimationComponentLoop = animationsLoop[textAnimationNameLoop];
+	const AnimationComponentIn = animationsIn[textAnimationNameIn];
+	const AnimationComponentOut = animationsOut[textAnimationNameOut];
+	const AnimationComponentLoop = animationsLoop[textAnimationNameLoop];
 
-  return (
-    <>
-      {lines.map((line, rowIndex) => (
-        <div key={rowIndex}>
-          {line.split("").map((char, index) => {
-            if (validAnimIn && AnimationComponentIn) {
-              return (
-                <AnimationComponentIn
-                  key={index}
-                  char={char}
-                  index={index}
-                  frame={frame}
-                  textLength={maxTextLengthInLine}
-                  fps={fps}
-                  animationTextInFrames={animationTextInFrames}
-                  details={details}
-                />
-              );
-            }
-            if (validAnimOut && AnimationComponentOut) {
-              return (
-                <AnimationComponentOut
-                  key={index}
-                  char={char}
-                  index={index}
-                  frame={frame}
-                  textLength={maxTextLengthInLine}
-                  fps={fps}
-                  animationTextOutFrames={animationTextOutFrames}
-                  durationInFrames={durationInFrames}
-                  details={details}
-                />
-              );
-            }
-            if (textAnimationNameLoop && !validAnimIn && !validAnimOut) {
-              return (
-                <AnimationComponentLoop
-                  key={index}
-                  char={char}
-                  index={index}
-                  frame={frame}
-                  textLength={maxTextLengthInLine}
-                  fps={fps}
-                  animationTextLoopFrames={animationTextLoopFrames}
-                  details={details}
-                />
-              );
-            }
-            return <span key={index}>{char}</span>;
-          })}
-        </div>
-      ))}
-    </>
-  );
+	return (
+		<>
+			{lines.map((line, rowIndex) => (
+				<div key={rowIndex}>
+					{line.split("").map((char, index) => {
+						if (validAnimIn && AnimationComponentIn) {
+							return (
+								<AnimationComponentIn
+									key={index}
+									char={char}
+									index={index}
+									frame={frame}
+									textLength={maxTextLengthInLine}
+									fps={fps}
+									animationTextInFrames={animationTextInFrames}
+									details={details}
+								/>
+							);
+						}
+						if (validAnimOut && AnimationComponentOut) {
+							return (
+								<AnimationComponentOut
+									key={index}
+									char={char}
+									index={index}
+									frame={frame}
+									textLength={maxTextLengthInLine}
+									fps={fps}
+									animationTextOutFrames={animationTextOutFrames}
+									durationInFrames={durationInFrames}
+									details={details}
+								/>
+							);
+						}
+						if (textAnimationNameLoop && !validAnimIn && !validAnimOut) {
+							return (
+								<AnimationComponentLoop
+									key={index}
+									char={char}
+									index={index}
+									frame={frame}
+									textLength={maxTextLengthInLine}
+									fps={fps}
+									animationTextLoopFrames={animationTextLoopFrames}
+									details={details}
+								/>
+							);
+						}
+						return <span key={index}>{char}</span>;
+					})}
+				</div>
+			))}
+		</>
+	);
 };

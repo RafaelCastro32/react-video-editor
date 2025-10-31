@@ -11,7 +11,7 @@ This is a React-based video editor application built with Next.js 15, TypeScript
 ### Core Development
 ```bash
 pnpm install          # Install dependencies
-pnpm dev              # Start development server (http://localhost:3000)
+pnpm devv              # Start development server (http://localhost:3000)
 pnpm build            # Build for production
 pnpm start            # Start production server
 pnpm lint             # Run Next.js linter

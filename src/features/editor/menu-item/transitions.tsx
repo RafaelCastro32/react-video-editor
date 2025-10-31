@@ -5,61 +5,61 @@ import { TRANSITIONS } from "../data/transitions";
 import { useIsDraggingOverTimeline } from "../hooks/is-dragging-over-timeline";
 
 export const Transitions = () => {
-  const isDraggingOverTimeline = useIsDraggingOverTimeline();
+	const isDraggingOverTimeline = useIsDraggingOverTimeline();
 
-  return (
-    <div className="flex flex-1 flex-col">
-      <div className="text-text-primary flex h-12 flex-none items-center px-4 text-sm font-medium">
-        Transitions
-      </div>
-      <ScrollArea className="flex-1 h-[calc(100%-48px)]">
-        <div className="grid gap-2 px-4 [grid-template-columns:repeat(auto-fit,minmax(80px,1fr))]">
-          {TRANSITIONS.map((transition, index) => (
-            <TransitionsMenuItem
-              key={index}
-              transition={transition}
-              shouldDisplayPreview={!isDraggingOverTimeline}
-            />
-          ))}
-        </div>
-      </ScrollArea>
-    </div>
-  );
+	return (
+		<div className="flex flex-1 flex-col">
+			<div className="text-text-primary flex h-12 flex-none items-center px-4 text-sm font-medium">
+				Transitions
+			</div>
+			<ScrollArea className="flex-1 h-[calc(100%-48px)]">
+				<div className="grid gap-2 px-4 [grid-template-columns:repeat(auto-fit,minmax(80px,1fr))]">
+					{TRANSITIONS.map((transition, index) => (
+						<TransitionsMenuItem
+							key={index}
+							transition={transition}
+							shouldDisplayPreview={!isDraggingOverTimeline}
+						/>
+					))}
+				</div>
+			</ScrollArea>
+		</div>
+	);
 };
 
 const TransitionsMenuItem = ({
-  transition,
-  shouldDisplayPreview
+	transition,
+	shouldDisplayPreview,
 }: {
-  transition: Partial<any>;
-  shouldDisplayPreview: boolean;
+	transition: Partial<any>;
+	shouldDisplayPreview: boolean;
 }) => {
-  const style = React.useMemo(
-    () => ({
-      backgroundImage: `url(${transition.preview})`,
-      backgroundSize: "cover",
-      width: "70px",
-      height: "70px"
-    }),
-    [transition.preview]
-  );
+	const style = React.useMemo(
+		() => ({
+			backgroundImage: `url(${transition.preview})`,
+			backgroundSize: "cover",
+			width: "70px",
+			height: "70px",
+		}),
+		[transition.preview],
+	);
 
-  return (
-    <Draggable
-      data={transition}
-      renderCustomPreview={<div style={style} />}
-      shouldDisplayPreview={shouldDisplayPreview}
-    >
-      <div>
-        <div>
-          <div style={style} draggable={false} />
-        </div>
-        <div className="flex h-6 items-center overflow-ellipsis text-nowrap text-[12px] capitalize text-muted-foreground">
-          {transition.name || transition.type}
-        </div>
-      </div>
-    </Draggable>
-  );
+	return (
+		<Draggable
+			data={transition}
+			renderCustomPreview={<div style={style} />}
+			shouldDisplayPreview={shouldDisplayPreview}
+		>
+			<div>
+				<div>
+					<div style={style} draggable={false} />
+				</div>
+				<div className="flex h-6 items-center overflow-ellipsis text-nowrap text-[12px] capitalize text-muted-foreground">
+					{transition.name || transition.type}
+				</div>
+			</div>
+		</Draggable>
+	);
 };
 
 export default TransitionsMenuItem;
